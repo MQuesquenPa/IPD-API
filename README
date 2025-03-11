@@ -1,0 +1,29 @@
+npm install typescript
+
+npx tsc --init
+
+npm install express
+
+npm install bcryptjs
+
+npm install bcrypt
+
+npm install --save-dev @types/bcrypt
+
+npm install mysql2
+
+npm install cors
+
+npm install dotenv
+
+npm install express-validator
+
+npm install --save-dev @types/dotenv
+
+npm install express cors
+
+npm install --save-dev @types/express @types/cors
+
+npm install jsonwebtoken
+
+npm install --save-dev @types/jsonwebtoken
