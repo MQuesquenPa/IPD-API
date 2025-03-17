@@ -27,3 +27,5 @@ npm install --save-dev @types/express @types/cors
 npm install jsonwebtoken
 
 npm install --save-dev @types/jsonwebtoken
+
+npx ts-node src/server.ts
