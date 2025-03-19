@@ -20,4 +20,5 @@ export interface Products {
     precio_final?: number;
     p_venta_ferreyros?: number;
     imagen?: string | Buffer | null;
+    lugar?: string;
 }

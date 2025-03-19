@@ -3,6 +3,12 @@ import { saveProduct } from '../repository/productRepository';
 
 export const createProduct = async (productData: Partial<Products>): Promise<Products> => {
 
+    const base64String = typeof productData.imagen === "string" 
+    ? productData.imagen.replace(/^data:image\/\w+;base64,/, "") 
+    : "";   
+    
+    const buffer = Buffer.from(base64String, 'base64');
+
     const product: Products = {
         codigo: productData.codigo ?? '',
         descripcion: productData.descripcion ?? '',
@@ -23,10 +29,11 @@ export const createProduct = async (productData: Partial<Products>): Promise<Pro
         p_fob_cat: productData.p_fob_cat ?? 0,
         precio_final: productData.precio_final ?? 0,
         p_venta_ferreyros: productData.p_venta_ferreyros ?? 0,
-        imagen: productData.imagen ? Buffer.from(productData.imagen as string, 'base64') : null
+        imagen: buffer.length > 0 ? buffer : null,
+        lugar: productData.lugar ? productData.lugar : ''
     };
 
     const id = await saveProduct(product);
     
-    return { ...product, id };
+    return { ...product, id, imagen: product.imagen ? `data:image/jpeg;base64,${product.imagen.toString('base64')}` : null};
 };
