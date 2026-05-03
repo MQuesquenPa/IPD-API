@@ -1,51 +1,64 @@
 import { Request, Response } from 'express';
-import { validationResult } from 'express-validator';
-import { createProduct } from '../services/productService';
-import { getAllProducts } from '../repository/productRepository';
+import {
+    createProduct,
+    importProductsFromExcel,
+    listProducts,
+    updateProduct
+} from '../services/productService';
+import { AppError } from '../utils/errorUtils';
+import { sendError, sendSuccess } from '../utils/responseUtils';
 
-
-export const saveProducts = async (req: Request, res: Response): Promise<void> => {
+export const getProducts = async (_req: Request, res: Response): Promise<void> => {
     try {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            res.status(400).json({ status: 400, errors: errors.array() });
-            return;
-        }
+        const products = await listProducts();
 
-        const product = await createProduct(req.body);
-
-
-        if (!product) throw new Error
-
-        res.status(201).json({ 
-            status: 201, 
-            message: `El producto ${product.descripcion} con codigo ${product.codigo} se guardó exitosamente`, 
-            data: product 
-        });
+        sendSuccess(res, 200, products);
     } catch (error: any) {
-        res.status(500).json({ status: 500, message: 'Error interno del servidor', detail: error.message });
+        console.error('Error al obtener productos:', error);
+        sendError(res, error);
     }
 };
 
-export const getProducts = async (req: Request, res: Response): Promise<void> => {
+export const saveProducts = async (req: Request, res: Response): Promise<void> => {
     try {
-        const rows = await getAllProducts();
+        const product = await createProduct(req.body);
 
-        if (!rows.length) {
-            res.status(404).json({ status: 404, message: 'No se encontraron productos' });
-            return
+        sendSuccess(res, 201, product, `El producto ${product.descripcion} con codigo ${product.codigo} se guardo exitosamente`);
+    } catch (error: any) {
+        console.error('Error al guardar producto:', error);
+        sendError(res, error);
+    }
+};
+
+export const updateProducts = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const id = req.params.id ? Number(req.params.id) : Number(req.body.id);
+        const product = await updateProduct({
+            ...req.body,
+            id
+        });
+
+        sendSuccess(res, 200, product, 'Producto actualizado exitosamente');
+    } catch (error: any) {
+        console.error('Error al actualizar producto:', error);
+        sendError(res, error);
+    }
+};
+
+export const importProducts = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const file = (req as any).file;
+
+        if (!file) {
+            sendError(res, new AppError('Debe enviar un archivo Excel en el campo file'));
+            return;
         }
 
-        const products = rows.map(product => ({
-            ...product,
-            imagen: product.imagen ? `data:image/jpeg;base64,${product.imagen.toString('base64')}` : null
-        }));
+        const result = await importProductsFromExcel(file.buffer);
 
-
-        res.status(200).json({ status: 200, data: products });
-        return 
-    } catch (error:any) {
-        console.error("Error al obtener productos:", error);
-        res.status(500).json({ status: 500, message: 'Error interno del servidor', detail: error.toString() });
+        sendSuccess(res, 200, result, 'Importacion de productos finalizada');
+    } catch (error: any) {
+        console.error('Error al importar productos:', error);
+        sendError(res, error);
     }
 };
