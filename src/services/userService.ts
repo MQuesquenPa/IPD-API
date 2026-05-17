@@ -1,17 +1,16 @@
 import bcrypt from 'bcrypt';
-import { User, UserRole, UserStatus } from '../models/userModel';
+import { User, UserStatus } from '../models/userModel';
 import { saveUser } from '../repository/userRepository';
 
-export const createUser = async (userData: Partial<User>): Promise<User> => {
-    
+export const createUser = async (userData: Partial<User> & { email?: string }): Promise<User> => {
+    const correo = userData.correo ?? userData.email ?? '';
     const hashedPassword = await bcrypt.hash(userData.password as string, 10);
 
     const user: User = {
-        email: userData.email as string,
+        ruc: userData.ruc as string,
+        correo,
         password: hashedPassword,
-        role: UserRole.USER,
-        status: UserStatus.ACTIVE,
-        created_at: new Date(),
+        estado: userData.estado ?? UserStatus.ACTIVE
     };
 
     await saveUser(user);

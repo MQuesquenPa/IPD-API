@@ -1,21 +1,13 @@
-export enum UserRole {
-    ADMIN = 'admin',
-    USER = 'user',
-    GUEST = 'guest'
-}
-
 export enum UserStatus {
-    ACTIVE = 'active',
-    INACTIVE = 'inactive',
-    BANNED = 'banned'
+    ACTIVE = 'A',
+    INACTIVE = 'I'
 }
 
 export interface User {
-    email: string;
+    ruc: string;
+    correo: string;
     password: string;
-    role?: UserRole;
-    status?: UserStatus;
-    created_at?: Date;
-    updated_at?: Date;
-    last_login?: Date;
+    estado?: UserStatus | string;
+    fecha_creacion?: Date;
+    fecha_modificacion?: Date;
 }

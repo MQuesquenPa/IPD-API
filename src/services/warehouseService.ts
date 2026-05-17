@@ -4,13 +4,14 @@ import {
     getAllWarehouses
 } from '../repository/warehouseRepository';
 import { AppError } from '../utils/errorUtils';
+import { normalizeEntityStatus } from '../utils/statusUtils';
 
 const buildWarehouse = (warehouseData: Partial<Warehouse>): Warehouse => ({
     id: warehouseData.id,
     ruc: warehouseData.ruc ?? '',
     codigo: warehouseData.codigo ?? '',
     nombre: warehouseData.nombre ?? '',
-    estado: warehouseData.estado ?? 'activo'
+    estado: normalizeEntityStatus(warehouseData.estado)
 });
 
 const validateWarehouse = (warehouse: Warehouse): void => {

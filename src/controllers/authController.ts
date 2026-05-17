@@ -1,55 +1,53 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
-import { generateToken } from '../utils/tokenUtils';
-import { getAllUsers, updateLastLogin, verifyLogin } from '../repository/userRepository';
 import { validationResult } from 'express-validator';
+import { generateToken } from '../utils/tokenUtils';
+import { getAllUsers, verifyLogin } from '../repository/userRepository';
 import { createUser } from '../services/userService';
+import { sendError, sendSuccess } from '../utils/responseUtils';
 
 export const login = async (req: Request, res: Response): Promise<void> => {
-    const { email, password } = req.body;
+    const correo = req.body.correo ?? req.body.email;
+    const { password } = req.body;
+
     try {
-        const rows = await verifyLogin(email);
-        const users = rows as any[];
+        const users = await verifyLogin(correo);
 
         if (users.length === 0) {
-            res.status(401).json({status: res.status, message: 'Credenciales inválidas' });
+            res.status(401).json({ status: 401, message: 'Credenciales invalidas' });
             return;
         }
 
         const user = users[0];
-
         const isMatch = await bcrypt.compare(password, user.password);
 
-        if (!isMatch) {
-            res.status(401).json({status: res.statusCode, message: 'Credenciales inválidas' });
+        if (!isMatch || user.estado !== 'A') {
+            res.status(401).json({ status: 401, message: 'Credenciales invalidas' });
             return;
         }
 
-        const token = generateToken(user.email, user.role || 'user');
+        const token = generateToken(user.correo, 'user');
 
-        updateLastLogin(email)
         res.json({ token });
-
-    } catch (error:any) {
-        res.status(500).json({ status: res.status, message: 'Error interno del servidor', detail: error.toString() });
+    } catch (error: any) {
+        console.error('Error en login:', error);
+        sendError(res, error);
     }
 };
 
-
-export const getUsers = async (req: Request, res: Response): Promise<void> => {
+export const getUsers = async (_req: Request, res: Response): Promise<void> => {
     try {
         const rows = await getAllUsers();
 
         if (!rows.length) {
             res.status(404).json({ status: 404, message: 'No se encontraron usuarios' });
-            return
+            return;
         }
 
-        res.status(200).json({ status: 200, data: rows });
-        return 
-    } catch (error:any) {
-        console.error("Error al obtener usuarios:", error);
-        res.status(500).json({ status: 500, message: 'Error interno del servidor', detail: error.toString() });
+        sendSuccess(res, 200, rows);
+    } catch (error: any) {
+        console.error('Error al obtener usuarios:', error);
+        sendError(res, error);
     }
 };
 
@@ -63,15 +61,13 @@ export const saveUsers = async (req: Request, res: Response): Promise<void> => {
 
         const user = await createUser(req.body);
 
-
-        if (!user) throw new Error
-
-        res.status(201).json({ 
-            status: 201, 
-            message: `El usuario con correo ${user.email} se guardó exitosamente`, 
-            data: user 
-        });
+        sendSuccess(res, 201, {
+            ruc: user.ruc,
+            correo: user.correo,
+            estado: user.estado
+        }, `El usuario con correo ${user.correo} se guardo exitosamente`);
     } catch (error: any) {
-        res.status(500).json({ status: 500, message: 'Error interno del servidor', detail: error.message });
+        console.error('Error al guardar usuario:', error);
+        sendError(res, error);
     }
 };

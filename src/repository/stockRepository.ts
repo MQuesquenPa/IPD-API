@@ -1,9 +1,12 @@
 import { PoolConnection, ResultSetHeader, RowDataPacket } from 'mysql2/promise';
-import { pool } from '../config/db';
+import { inventoryTable, pool } from '../config/db';
 import { StockMovement, StockProduct } from '../models/stockModel';
-import { AppError, getSqlErrorMessage } from '../utils/errorUtils';
+import { AppError, createSqlAppError } from '../utils/errorUtils';
 
 type DbExecutor = typeof pool | PoolConnection;
+
+const stockProductTable = inventoryTable('stock_producto');
+const stockMovementTable = inventoryTable('movimiento_stock');
 
 const stockColumns = `
     id,
@@ -21,7 +24,7 @@ const execute = async <T extends RowDataPacket[] | ResultSetHeader>(
         const [result] = await executor.execute<T>(sql, values);
         return result;
     } catch (error) {
-        throw new AppError(getSqlErrorMessage(error), 500);
+        throw createSqlAppError(error);
     }
 };
 
@@ -29,7 +32,7 @@ export const getStockByProduct = async (productoId: number): Promise<StockProduc
     const rows = await execute<RowDataPacket[]>(
         pool,
         `SELECT ${stockColumns}
-        FROM stock_producto
+        FROM ${stockProductTable}
         WHERE producto_id = ?
         ORDER BY almacen_id`,
         [productoId]
@@ -42,7 +45,7 @@ export const getStockByWarehouse = async (almacenId: number): Promise<StockProdu
     const rows = await execute<RowDataPacket[]>(
         pool,
         `SELECT ${stockColumns}
-        FROM stock_producto
+        FROM ${stockProductTable}
         WHERE almacen_id = ?
         ORDER BY producto_id`,
         [almacenId]
@@ -59,7 +62,7 @@ export const getStockByProductAndWarehouse = async (
     const rows = await execute<RowDataPacket[]>(
         connection,
         `SELECT ${stockColumns}
-        FROM stock_producto
+        FROM ${stockProductTable}
         WHERE producto_id = ? AND almacen_id = ?
         FOR UPDATE`,
         [productoId, almacenId]
@@ -81,7 +84,7 @@ export const ensureStockProductForUpdate = async (
 
     try {
         const [result] = await connection.execute<ResultSetHeader>(
-            `INSERT INTO stock_producto (
+            `INSERT INTO ${stockProductTable} (
                 producto_id,
                 almacen_id,
                 cantidad
@@ -97,7 +100,7 @@ export const ensureStockProductForUpdate = async (
         };
     } catch (error: any) {
         if (error.code !== 'ER_DUP_ENTRY') {
-            throw new AppError(getSqlErrorMessage(error), 500);
+            throw createSqlAppError(error);
         }
 
         const createdByAnotherTransaction = await getStockByProductAndWarehouse(productoId, almacenId, connection);
@@ -116,7 +119,7 @@ export const updateStockProduct = async (
 ): Promise<number> => {
     const result = await execute<ResultSetHeader>(
         connection,
-        `UPDATE stock_producto
+        `UPDATE ${stockProductTable}
         SET cantidad = ?
         WHERE producto_id = ? AND almacen_id = ?`,
         [
@@ -135,7 +138,7 @@ export const createStockMovement = async (
 ): Promise<number> => {
     const result = await execute<ResultSetHeader>(
         connection,
-        `INSERT INTO movimiento_stock (
+        `INSERT INTO ${stockMovementTable} (
             producto_id,
             almacen_id,
             tipo,

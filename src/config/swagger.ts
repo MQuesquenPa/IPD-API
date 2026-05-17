@@ -41,9 +41,9 @@ const options: swaggerJsdoc.Options = {
                 },
                 LoginRequest: {
                     type: 'object',
-                    required: ['email', 'password'],
+                    required: ['correo', 'password'],
                     properties: {
-                        email: { type: 'string', format: 'email', example: 'admin@ipd.com' },
+                        correo: { type: 'string', format: 'email', example: 'admin@ipd.com' },
                         password: { type: 'string', example: '123456' }
                     }
                 },
@@ -55,12 +55,12 @@ const options: swaggerJsdoc.Options = {
                 },
                 UserCreateRequest: {
                     type: 'object',
-                    required: ['email', 'password'],
+                    required: ['ruc', 'correo', 'password'],
                     properties: {
-                        email: { type: 'string', format: 'email', example: 'usuario@ipd.com' },
+                        ruc: { type: 'string', example: '20123456789' },
+                        correo: { type: 'string', format: 'email', example: 'usuario@ipd.com' },
                         password: { type: 'string', minLength: 6, example: '123456' },
-                        role: { type: 'string', enum: ['admin', 'user', 'guest'], example: 'user' },
-                        status: { type: 'string', enum: ['active', 'inactive', 'banned'], example: 'active' }
+                        estado: { type: 'string', enum: ['A', 'I'], example: 'A' }
                     }
                 },
                 Product: {

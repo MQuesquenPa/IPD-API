@@ -10,14 +10,11 @@ import {
 } from '../repository/stockRepository';
 import { getWarehouseById } from '../repository/warehouseRepository';
 import { AppError } from '../utils/errorUtils';
+import { isActiveStatus } from '../utils/statusUtils';
 
 interface NormalizedStockOperation extends StockOperation {
     cantidad: number;
 }
-
-const isActive = (estado?: string): boolean => {
-    return (estado ?? '').toLowerCase() === 'activo';
-};
 
 const validateStockOperation = (operation: StockOperation): NormalizedStockOperation => {
     if (!operation.producto_id) {
@@ -52,7 +49,7 @@ const validateStockEntities = async (operation: NormalizedStockOperation): Promi
         throw new AppError('El producto no existe', 404);
     }
 
-    if (!isActive(product.estado)) {
+    if (!isActiveStatus(product.estado)) {
         throw new AppError('El producto no esta activo');
     }
 
@@ -60,7 +57,7 @@ const validateStockEntities = async (operation: NormalizedStockOperation): Promi
         throw new AppError('El almacen no existe', 404);
     }
 
-    if (!isActive(warehouse.estado)) {
+    if (!isActiveStatus(warehouse.estado)) {
         throw new AppError('El almacen no esta activo');
     }
 };

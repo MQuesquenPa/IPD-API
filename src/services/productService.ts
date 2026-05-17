@@ -7,6 +7,7 @@ import {
     upsertProductByCodeAndRuc
 } from '../repository/productRepository';
 import { AppError, getErrorMessage } from '../utils/errorUtils';
+import { normalizeEntityStatus } from '../utils/statusUtils';
 
 interface ImportProductsResult {
     totalRows: number;
@@ -45,7 +46,7 @@ const buildProduct = (productData: Partial<Product>): Product => ({
     precio_unitario: productData.precio_unitario ?? null,
     precio_venta: productData.precio_venta ?? null,
     imagen: parseProductImage(productData.imagen),
-    estado: productData.estado ?? 'activo'
+    estado: normalizeEntityStatus(productData.estado)
 });
 
 const allowedUpdateFields: Array<keyof Omit<Product, 'id'>> = [
@@ -76,6 +77,11 @@ const buildProductPatch = (productData: Partial<Product>): Partial<Omit<Product,
 
         if (field === 'imagen') {
             patch.imagen = parseProductImage(value as Product['imagen']);
+            return patch;
+        }
+
+        if (field === 'estado') {
+            patch.estado = normalizeEntityStatus(value as string);
             return patch;
         }
 
@@ -158,7 +164,7 @@ const mapExcelRowToProduct = (row: Record<string, any>): Product => {
         precio_unitario: toNullableNumber(getCellValue(normalizedRow, ['precio_unitario', 'precio unitario', 'p_unitario'])),
         precio_venta: toNullableNumber(getCellValue(normalizedRow, ['precio_venta', 'precio venta', 'p_venta'])),
         imagen: toNullableString(getCellValue(normalizedRow, ['imagen', 'image'])),
-        estado: toStringValue(getCellValue(normalizedRow, ['estado', 'status'])) || 'activo'
+        estado: toStringValue(getCellValue(normalizedRow, ['estado', 'status'])) || 'A'
     });
 };
 

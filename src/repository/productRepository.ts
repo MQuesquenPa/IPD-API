@@ -1,7 +1,9 @@
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
-import { pool } from '../config/db';
+import { inventoryTable, pool } from '../config/db';
 import { Product } from '../models/productsModel';
-import { AppError, getSqlErrorMessage } from '../utils/errorUtils';
+import { AppError, createSqlAppError } from '../utils/errorUtils';
+
+const productTable = inventoryTable('producto');
 
 const productColumns = `
     id,
@@ -21,32 +23,32 @@ const productColumns = `
 export const getAllProducts = async (): Promise<Product[]> => {
     try {
         const [rows] = await pool.execute<RowDataPacket[]>(
-            `SELECT ${productColumns} FROM producto ORDER BY descripcion`
+            `SELECT ${productColumns} FROM ${productTable} ORDER BY descripcion`
         );
 
         return rows as Product[];
     } catch (error) {
-        throw new AppError(getSqlErrorMessage(error), 500);
+        throw createSqlAppError(error);
     }
 };
 
 export const getProductById = async (id: number): Promise<Product | null> => {
     try {
         const [rows] = await pool.execute<RowDataPacket[]>(
-            `SELECT ${productColumns} FROM producto WHERE id = ? LIMIT 1`,
+            `SELECT ${productColumns} FROM ${productTable} WHERE id = ? LIMIT 1`,
             [id]
         );
 
         return rows.length ? rows[0] as Product : null;
     } catch (error) {
-        throw new AppError(getSqlErrorMessage(error), 500);
+        throw createSqlAppError(error);
     }
 };
 
 export const createProduct = async (product: Product): Promise<number> => {
     try {
         const [result] = await pool.execute<ResultSetHeader>(
-            `INSERT INTO producto (
+            `INSERT INTO ${productTable} (
                 ruc,
                 codigo,
                 codigo_alterno,
@@ -76,7 +78,7 @@ export const createProduct = async (product: Product): Promise<number> => {
 
         return result.insertId;
     } catch (error) {
-        throw new AppError(getSqlErrorMessage(error), 500);
+        throw createSqlAppError(error);
     }
 };
 
@@ -87,7 +89,7 @@ export const updateProduct = async (product: Product): Promise<number> => {
 
     try {
         const [result] = await pool.execute<ResultSetHeader>(
-            `UPDATE producto SET
+            `UPDATE ${productTable} SET
                 ruc = ?,
                 codigo = ?,
                 codigo_alterno = ?,
@@ -118,7 +120,7 @@ export const updateProduct = async (product: Product): Promise<number> => {
 
         return result.affectedRows;
     } catch (error) {
-        throw new AppError(getSqlErrorMessage(error), 500);
+        throw createSqlAppError(error);
     }
 };
 
@@ -136,13 +138,13 @@ export const updateProductFields = async (
         const setClause = entries.map(([field]) => `${field} = ?`).join(', ');
         const values = entries.map(([, value]) => value);
         const [result] = await pool.execute<ResultSetHeader>(
-            `UPDATE producto SET ${setClause} WHERE id = ?`,
+            `UPDATE ${productTable} SET ${setClause} WHERE id = ?`,
             [...values, id]
         );
 
         return result.affectedRows;
     } catch (error) {
-        throw new AppError(getSqlErrorMessage(error), 500);
+        throw createSqlAppError(error);
     }
 };
 
@@ -153,13 +155,13 @@ export const upsertProductByCodeAndRuc = async (product: Product): Promise<void>
         await connection.beginTransaction();
 
         const [rows] = await connection.execute<RowDataPacket[]>(
-            'SELECT id FROM producto WHERE ruc = ? AND codigo = ? LIMIT 1 FOR UPDATE',
+            `SELECT id FROM ${productTable} WHERE ruc = ? AND codigo = ? LIMIT 1 FOR UPDATE`,
             [product.ruc, product.codigo]
         );
 
         if (!rows.length) {
             await connection.execute<ResultSetHeader>(
-                `INSERT INTO producto (
+                `INSERT INTO ${productTable} (
                     ruc,
                     codigo,
                     codigo_alterno,
@@ -188,7 +190,7 @@ export const upsertProductByCodeAndRuc = async (product: Product): Promise<void>
             );
         } else {
             await connection.execute<ResultSetHeader>(
-                `UPDATE producto SET
+                `UPDATE ${productTable} SET
                     codigo_alterno = ?,
                     descripcion = ?,
                     categoria = ?,
@@ -217,7 +219,7 @@ export const upsertProductByCodeAndRuc = async (product: Product): Promise<void>
         await connection.commit();
     } catch (error) {
         await connection.rollback();
-        throw new AppError(getSqlErrorMessage(error), 500);
+        throw createSqlAppError(error);
     } finally {
         connection.release();
     }

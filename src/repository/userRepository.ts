@@ -1,28 +1,54 @@
+import { ResultSetHeader, RowDataPacket } from 'mysql2';
 import { pool } from '../config/db';
-import { RowDataPacket } from 'mysql2';
 import { User } from '../models/userModel';
+import { createSqlAppError } from '../utils/errorUtils';
 
-export const verifyLogin = async (email:String) => {
-    const [rows] = await pool.execute('SELECT * FROM user WHERE email = ?', [email]);
-    return rows
-}
+export const verifyLogin = async (correo: string): Promise<User[]> => {
+    try {
+        const [rows] = await pool.execute<RowDataPacket[]>(
+            'SELECT ruc, correo, password, estado, fecha_creacion, fecha_modificacion FROM usuario WHERE correo = ?',
+            [correo]
+        );
 
-export const getAllUsers = async () => {
-    const [rows] = await pool.execute<RowDataPacket[]>('SELECT EMAIL, ROLE, STATUS FROM user');
-    return rows;
+        return rows as User[];
+    } catch (error) {
+        throw createSqlAppError(error);
+    }
 };
 
-export const updateLastLogin = async (email:String) => {
-    const [rows] = await pool.execute('UPDATE user SET last_login = NOW() WHERE email = ?', [email]);
-    return rows;
+export const getAllUsers = async (): Promise<Omit<User, 'password'>[]> => {
+    try {
+        const [rows] = await pool.execute<RowDataPacket[]>(
+            'SELECT ruc, correo, estado, fecha_creacion, fecha_modificacion FROM usuario'
+        );
+
+        return rows as Omit<User, 'password'>[];
+    } catch (error) {
+        throw createSqlAppError(error);
+    }
 };
 
+export const saveUser = async (user: User): Promise<number> => {
+    try {
+        const [result] = await pool.execute<ResultSetHeader>(
+            `INSERT INTO usuario (
+                ruc,
+                correo,
+                password,
+                estado,
+                fecha_creacion,
+                fecha_modificacion
+            ) VALUES (?, ?, ?, ?, NOW(), NOW())`,
+            [
+                user.ruc,
+                user.correo,
+                user.password,
+                user.estado
+            ]
+        );
 
-export const saveUser = async (req:User) => {
-    const [rows] = await pool.execute(
-        'INSERT INTO user (email, password, role, status, created_at) VALUES (?, ?, ?, ?, ?)', 
-        [req.email, req.password, req.role, req.status, req.created_at]
-    );
-    return rows;
-
+        return result.affectedRows;
+    } catch (error) {
+        throw createSqlAppError(error);
+    }
 };
