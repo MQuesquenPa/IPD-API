@@ -36,7 +36,14 @@ const options: swaggerJsdoc.Options = {
                     properties: {
                         status: { type: 'integer', example: 400 },
                         message: { type: 'string', example: 'El codigo del producto es obligatorio' },
-                        detail: { type: 'string', example: 'El codigo del producto es obligatorio' }
+                        details: {
+                            nullable: true,
+                            oneOf: [
+                                { type: 'array', items: { type: 'object' } },
+                                { type: 'object' },
+                                { type: 'string' }
+                            ]
+                        }
                     }
                 },
                 LoginRequest: {
@@ -179,7 +186,23 @@ const options: swaggerJsdoc.Options = {
                     description: 'Token no enviado o invalido',
                     content: {
                         'application/json': {
-                            schema: { $ref: '#/components/schemas/ApiError' }
+                            schema: { $ref: '#/components/schemas/ApiError' },
+                            example: {
+                                status: 401,
+                                message: 'Acceso denegado'
+                            }
+                        }
+                    }
+                },
+                ConflictError: {
+                    description: 'Registro duplicado',
+                    content: {
+                        'application/json': {
+                            schema: { $ref: '#/components/schemas/ApiError' },
+                            example: {
+                                status: 409,
+                                message: 'Ya existe un registro con los datos enviados'
+                            }
                         }
                     }
                 },
@@ -187,7 +210,11 @@ const options: swaggerJsdoc.Options = {
                     description: 'Error interno del servidor',
                     content: {
                         'application/json': {
-                            schema: { $ref: '#/components/schemas/ApiError' }
+                            schema: { $ref: '#/components/schemas/ApiError' },
+                            example: {
+                                status: 500,
+                                message: 'Error interno del servidor'
+                            }
                         }
                     }
                 }
@@ -249,6 +276,7 @@ const options: swaggerJsdoc.Options = {
                         201: { description: 'Usuario creado' },
                         400: { description: 'Validacion fallida' },
                         401: { $ref: '#/components/responses/UnauthorizedError' },
+                        409: { $ref: '#/components/responses/ConflictError' },
                         500: { $ref: '#/components/responses/ServerError' }
                     }
                 }
@@ -296,6 +324,7 @@ const options: swaggerJsdoc.Options = {
                         201: { description: 'Producto creado' },
                         400: { description: 'Validacion fallida' },
                         401: { $ref: '#/components/responses/UnauthorizedError' },
+                        409: { $ref: '#/components/responses/ConflictError' },
                         500: { $ref: '#/components/responses/ServerError' }
                     }
                 }
@@ -326,6 +355,7 @@ const options: swaggerJsdoc.Options = {
                         400: { description: 'Validacion fallida' },
                         401: { $ref: '#/components/responses/UnauthorizedError' },
                         404: { description: 'Producto no encontrado' },
+                        409: { $ref: '#/components/responses/ConflictError' },
                         500: { $ref: '#/components/responses/ServerError' }
                     }
                 }
@@ -402,6 +432,7 @@ const options: swaggerJsdoc.Options = {
                         201: { description: 'Almacen creado' },
                         400: { description: 'Validacion fallida' },
                         401: { $ref: '#/components/responses/UnauthorizedError' },
+                        409: { $ref: '#/components/responses/ConflictError' },
                         500: { $ref: '#/components/responses/ServerError' }
                     }
                 }

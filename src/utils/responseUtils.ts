@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { getErrorMessage, getHttpStatusCode } from './errorUtils';
+import { getErrorDetails, getErrorMessage, getHttpStatusCode } from './errorUtils';
 
 export const sendSuccess = (
     res: Response,
@@ -20,10 +20,12 @@ export const sendError = (
     fallbackMessage = 'Error interno del servidor'
 ): void => {
     const status = getHttpStatusCode(error);
+    const message = status === 500 ? fallbackMessage : getErrorMessage(error);
+    const details = status === 500 ? undefined : getErrorDetails(error);
 
     res.status(status).json({
         status,
-        message: status === 500 ? fallbackMessage : getErrorMessage(error),
-        ...(status === 500 ? {} : { detail: getErrorMessage(error) })
+        message,
+        ...(details ? { details } : {})
     });
 };

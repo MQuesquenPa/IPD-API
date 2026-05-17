@@ -4,6 +4,7 @@ import { validationResult } from 'express-validator';
 import { generateToken } from '../utils/tokenUtils';
 import { getAllUsers, verifyLogin } from '../repository/userRepository';
 import { createUser } from '../services/userService';
+import { AppError } from '../utils/errorUtils';
 import { sendError, sendSuccess } from '../utils/responseUtils';
 
 export const login = async (req: Request, res: Response): Promise<void> => {
@@ -55,7 +56,7 @@ export const saveUsers = async (req: Request, res: Response): Promise<void> => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            res.status(400).json({ status: 400, errors: errors.array() });
+            sendError(res, new AppError('Validacion fallida', 400, errors.array()));
             return;
         }
 
